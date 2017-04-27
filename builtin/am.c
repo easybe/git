@@ -1351,20 +1351,22 @@ static int get_mail_commit_oid(struct object_id *commit_id, const char *mail)
 	struct strbuf sb = STRBUF_INIT;
 	FILE *fp = xfopen(mail, "r");
 	const char *x;
-	int ret = 0;
+	int ret = -1; /* assume errors */
 
 	if (strbuf_getline_lf(&sb, fp))
-		ret = -1;
+		goto leave;
 
-	if (!ret && !skip_prefix(sb.buf, "From ", &x))
-		ret = -1;
+	if (!skip_prefix(sb.buf, "From ", &x))
+		goto leave;
 
-	if (!ret && get_oid_hex(x, commit_id) < 0)
-		ret = -1;
-
+	if (get_oid_hex(x, commit_id) < 0)
+		goto leave;
+	/* all is well */
+	ret = 0;
+leave:
 	strbuf_release(&sb);
 	fclose(fp);
-	return 0;
+	return ret;
 }
 
 /**
